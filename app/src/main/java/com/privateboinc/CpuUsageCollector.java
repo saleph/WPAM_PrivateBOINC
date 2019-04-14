@@ -20,6 +20,7 @@ import static org.apache.commons.collections.BufferUtils.synchronizedBuffer;
 /**
  * Cpu usage collector. Statistics are based on values stored in /proc/stat system file.
  */
+@SuppressWarnings("unchecked")
 public class CpuUsageCollector {
     private static final int INITIAL_DELAY = 0;
     private static final int SAMPLES_BUFFER_SIZE_DEFAULT = 1000;
@@ -108,15 +109,15 @@ public class CpuUsageCollector {
         parseProcStatFile();
         if (previousTotalCpuCycles != 0) {
             addNewCpuUsage();
-            notifyCpuUsageSampleAddedListeners((float)cpuUsagePercentageSamples.get());
+            notifyCpuUsageSampleAddedListeners();
         }
         previousCpuCyclesSpentWorking = cpuCyclesSpentWorking;
         previousTotalCpuCycles = totalCpuCycles;
     }
 
-    private void notifyCpuUsageSampleAddedListeners(float cpuUsagePercentage) {
+    private void notifyCpuUsageSampleAddedListeners() {
         for (CpuUsageSampleAddedListener listener : listeners) {
-            listener.onCpuUsageSampleAdded(cpuUsagePercentage);
+            listener.onCpuUsageSampleAdded();
         }
     }
 
