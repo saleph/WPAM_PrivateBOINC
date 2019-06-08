@@ -11,6 +11,7 @@ import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 
 import android.os.Process;
+import android.util.Log;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -25,13 +26,17 @@ import java.util.concurrent.TimeUnit;
 public class MemoryUsageCollector {
     private static final int INITIAL_DELAY = 0;
     private static final int SAMPLES_BUFFER_SIZE_DEFAULT = 1000;
-    private final long periodInMs;
+    private final int periodInMs;
     private final int samplesBufferSize;
     private final Debug.MemoryInfo[] amMI;
 
     private boolean firstRead = true;
     private int memTotal;
-    private Buffer memUsed, memAvailable, memFree, cached, threshold;
+    private Buffer memUsed;
+    private Buffer memAvailable;
+    private Buffer memFree;
+    private Buffer cached;
+    private Buffer threshold;
     private ActivityManager activityManager;
     private ActivityManager.MemoryInfo activityMemoryInfo;
 
@@ -41,11 +46,11 @@ public class MemoryUsageCollector {
     private List<MemoryUsageSampleAddedListener> listeners = new ArrayList<>();
 
 
-    public MemoryUsageCollector(Context context, long periodInMs) {
+    public MemoryUsageCollector(Context context, int periodInMs) {
         this(context, periodInMs, SAMPLES_BUFFER_SIZE_DEFAULT);
     }
 
-    public MemoryUsageCollector(Context context, long periodInMs, int samplesBufferSize) {
+    public MemoryUsageCollector(Context context, int periodInMs, int samplesBufferSize) {
         this.periodInMs = periodInMs;
         this.samplesBufferSize = samplesBufferSize;
         this.activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -58,9 +63,19 @@ public class MemoryUsageCollector {
      */
     public void start() {
         memoryAM = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
+        memUsed = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
+        memAvailable = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
+        memFree = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
+        cached = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
+        threshold = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
         final Runnable collector = new Runnable() {
             public void run() {
-                read();
+                Log.i("sample", "sample collection");
+                try {
+                    read();
+                } catch (Exception e) {
+                    Log.i("sample", Log.getStackTraceString(e));
+                }
             }
         };
         collectorHandle = scheduler.scheduleAtFixedRate(collector, INITIAL_DELAY, periodInMs,
@@ -159,5 +174,17 @@ public class MemoryUsageCollector {
 
     Collection<String> getThreshold() {
         return threshold;
+    }
+
+    int getIntervalRead() {
+        return periodInMs;
+    }
+
+    int getIntervalUpdate() {
+        return periodInMs;
+    }
+
+    int getIntervalWidth() {
+        return periodInMs/1000;
     }
 }

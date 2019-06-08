@@ -1,23 +1,23 @@
 package com.privateboinc;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
-import android.app.TaskStackBuilder;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Binder;
 import android.os.IBinder;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
+import android.util.Log;
+
+import java.util.Collection;
 
 public class ReaderService extends Service {
 
-    private final CpuUsageCollector cpuUsageCollector = new CpuUsageCollector(1000);
-    private final MemoryUsageCollector memoryUsageCollector = new MemoryUsageCollector(this, 1000);
+    private MemoryUsageCollector memoryUsageCollector;
 
     private BroadcastReceiver receiverClose = new BroadcastReceiver() {
         @Override
@@ -27,74 +27,108 @@ public class ReaderService extends Service {
             stopSelf();
         }
     };
-    private Notification mNotificationRead;
+
+    public class ReaderServiceBinder extends Binder {
+        ReaderService getService() {
+            return ReaderService.this;
+        }
+    }
 
     @Override
     public void onCreate() {
-        cpuUsageCollector.registerCpuUsageSampleAddedListener(new CpuUsageSampleAddedListener() {
-            @Override
-            public void onCpuUsageSampleAdded() {
-                handleCpuSample();
-            }
-        });
+        log("created:");
+        this.memoryUsageCollector = new MemoryUsageCollector(this, 1000, 10);
         memoryUsageCollector.registerMemoryUsageSampleAddedListener(new MemoryUsageSampleAddedListener() {
             @Override
             public void onMemoryUsageSampleAdded() {
                 handleMemorySample();
             }
         });
-        cpuUsageCollector.start();
         memoryUsageCollector.start();
 
-        registerReceiver(receiverClose, new IntentFilter(C.actionClose));
+        //registerReceiver(receiverClose, new IntentFilter(C.actionClose));
+        startMyOwnForeground();
+    }
 
 
-        NotificationManager mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+    private void startMyOwnForeground(){
+        String NOTIFICATION_CHANNEL_ID = "com.example.simpleapp";
+        String channelName = "My Background Service";
+        NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
+        chan.setLightColor(Color.BLUE);
+        chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        assert manager != null;
+        manager.createNotificationChannel(chan);
 
-        PendingIntent contentIntent =
-                TaskStackBuilder.create(this).addNextIntentWithParentStack(new Intent(this,
-                        MainActivity.class)).getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-        PendingIntent pIClose = PendingIntent.getBroadcast(this, 0, new Intent(C.actionClose),
-                PendingIntent.FLAG_UPDATE_CURRENT);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this,
-                getString(R.string.channelId));
-        builder.setContentTitle(getString(R.string.app_name));
-        builder.setSmallIcon(R.drawable.icon_bw);
-        builder.setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.icon, null));
-        builder.setContentText(getString(R.string.notify_read2));
-        builder.setTicker(getString(R.string.notify_read));
-        builder.setWhen(0);
-        builder.setOngoing(true);
-        builder.setContentIntent(contentIntent);
-        builder.setStyle(new NotificationCompat.BigTextStyle()
-                .bigText(getString(R.string.notify_read2)));
-        mNotificationRead = builder.build();;
-
-        startForeground(10, mNotificationRead); // If not the AM service will be easily killed
-        // when a heavy-use memory app (like a browser or Google Maps) goes onto the foreground
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
+        Notification notification = notificationBuilder.setOngoing(true)
+                .setSmallIcon(R.drawable.icon_bw)
+                .setContentTitle("App is collecting device usage statistics")
+                .setPriority(NotificationManager.IMPORTANCE_MIN)
+                .setCategory(Notification.CATEGORY_SERVICE)
+                .build();
+        startForeground(2, notification);
     }
 
     private void handleMemorySample() {
-
-    }
-
-    private void handleCpuSample() {
-
+        log("memory:" + memoryUsageCollector.getMemUsed().toString());
     }
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
+        log("on destroy");
+        memoryUsageCollector.stop();
+        stopForeground(true);
+    }
 
+    private void log(String msg) {
+        Log.i("sample", msg);
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        class ReaderServiceBinder extends Binder {
-            ReaderService getService() {
-                return ReaderService.this;
-            }
-        }
         return new ReaderServiceBinder();
+    }
+
+    Collection<Integer> getMemoryAM() {
+        return memoryUsageCollector.getMemoryAM();
+    }
+
+    int getMemTotal() {
+        return memoryUsageCollector.getMemTotal() ;
+    }
+
+    Collection<String> getMemUsed() {
+        return memoryUsageCollector.getMemUsed();
+    }
+
+    Collection<String> getMemAvailable() {
+        return memoryUsageCollector.getMemAvailable();
+    }
+
+    Collection<String> getMemFree() {
+        return memoryUsageCollector.getMemFree();
+    }
+
+    Collection<String> getCached() {
+        return memoryUsageCollector.getCached();
+    }
+
+    Collection<String> getThreshold() {
+        return memoryUsageCollector.getThreshold();
+    }
+
+    int getIntervalRead() {
+        return memoryUsageCollector.getIntervalRead();
+    }
+
+    int getIntervalUpdate() {
+        return memoryUsageCollector. getIntervalUpdate();
+    }
+
+    int getIntervalWidth() {
+        return memoryUsageCollector.getIntervalWidth();
     }
 }
