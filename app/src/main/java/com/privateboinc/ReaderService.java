@@ -7,6 +7,7 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Binder;
 import android.os.IBinder;
@@ -37,7 +38,7 @@ public class ReaderService extends Service {
     @Override
     public void onCreate() {
         log("created:");
-        this.memoryUsageCollector = new MemoryUsageCollector(this, 1000, 1000);
+        this.memoryUsageCollector = new MemoryUsageCollector(this, C.defaultIntervalRead, 1000);
         memoryUsageCollector.registerMemoryUsageSampleAddedListener(new MemoryUsageSampleAddedListener() {
             @Override
             public void onMemoryUsageSampleAdded() {
@@ -46,7 +47,7 @@ public class ReaderService extends Service {
         });
         memoryUsageCollector.start();
 
-        //registerReceiver(receiverClose, new IntentFilter(C.actionClose));
+        registerReceiver(receiverClose, new IntentFilter(C.actionClose));
         startMyOwnForeground();
     }
 
@@ -72,7 +73,7 @@ public class ReaderService extends Service {
     }
 
     private void handleMemorySample() {
-        log("memory:" + memoryUsageCollector.getMemUsed().toString());
+        log("memory sample collected");
     }
 
     @Override
@@ -97,23 +98,23 @@ public class ReaderService extends Service {
     }
 
     int getMemTotal() {
-        return memoryUsageCollector.getMemTotal() ;
+        return memoryUsageCollector.getmMemTotal() ;
     }
 
     Collection<String> getMemUsed() {
-        return memoryUsageCollector.getMemUsed();
+        return memoryUsageCollector.getmMemUsed();
     }
 
     Collection<String> getMemAvailable() {
-        return memoryUsageCollector.getMemAvailable();
+        return memoryUsageCollector.getmMemAvailable();
     }
 
     Collection<String> getMemFree() {
-        return memoryUsageCollector.getMemFree();
+        return memoryUsageCollector.getmMemFree();
     }
 
     Collection<String> getCached() {
-        return memoryUsageCollector.getCached();
+        return memoryUsageCollector.getmCached();
     }
 
     Collection<String> getThreshold() {
@@ -128,7 +129,7 @@ public class ReaderService extends Service {
         return memoryUsageCollector. getIntervalUpdate();
     }
 
-    int getIntervalWidth() {
-        return memoryUsageCollector.getIntervalWidth();
+    double getIntervalWidthInSeconds() {
+        return memoryUsageCollector.getIntervalWidthInSeconds();
     }
 }

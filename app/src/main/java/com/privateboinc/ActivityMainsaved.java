@@ -111,10 +111,10 @@
 //            if (mSR != null) { // finish() could have been called from the BroadcastReceiver
 //                mHandlerVG.post(drawRunnableGraphic);
 //
-//                setTextLabelMemory(mTVMemUsed, mTVMemUsedP, mSR.getMemUsed());
-//                setTextLabelMemory(mTVMemAvailable, mTVMemAvailableP, mSR.getMemAvailable());
-//                setTextLabelMemory(mTVMemFree, mTVMemFreeP, mSR.getMemFree());
-//                setTextLabelMemory(mTVCached, mTVCachedP, mSR.getCached());
+//                setTextLabelMemory(mTVMemUsed, mTVMemUsedP, mSR.getmMemUsed());
+//                setTextLabelMemory(mTVMemAvailable, mTVMemAvailableP, mSR.getmMemAvailable());
+//                setTextLabelMemory(mTVMemFree, mTVMemFreeP, mSR.getmMemFree());
+//                setTextLabelMemory(mTVCached, mTVCachedP, mSR.getmCached());
 //                setTextLabelMemory(mTVThreshold, mTVThresholdP, mSR.getThreshold());
 //
 ////                for (int n = 0; n < mLProcessContainer.getChildCount(); ++n) {
@@ -162,7 +162,7 @@
 //            mVG.setService(mSR);
 //
 //
-//            mTVMemTotal.setText(mFormat.format(mSR.getMemTotal()) + C.kB);
+//            mTVMemTotal.setText(mFormat.format(mSR.getmMemTotal()) + C.kB);
 //
 //            mHandler.removeCallbacks(drawRunnable);
 //            mHandler.post(drawRunnable);
@@ -769,10 +769,10 @@
 ////                                process.put(C.pTPD, new ArrayList<Integer>());
 ////                            }
 ////
-////                        mSR.getMemUsed().clear();
-////                        mSR.getMemAvailable().clear();
-////                        mSR.getMemFree().clear();
-////                        mSR.getCached().clear();
+////                        mSR.getmMemUsed().clear();
+////                        mSR.getmMemAvailable().clear();
+////                        mSR.getmMemFree().clear();
+////                        mSR.getmCached().clear();
 ////                        mSR.getThreshold().clear();
 ////                    }
 ////
@@ -982,7 +982,7 @@
 //        List<String> values = new ArrayList<>(valuesCol);
 //        if (!values.isEmpty()) {
 //            absolute.setText(mFormat.format(Integer.parseInt(values.get(0))) + C.kB);
-//            percent.setText(mFormatPercent.format(Integer.parseInt(values.get(0)) * 100 / (float) mSR.getMemTotal()) + C.percent);
+//            percent.setText(mFormatPercent.format(Integer.parseInt(values.get(0)) * 100 / (float) mSR.getmMemTotal()) + C.percent);
 //        }
 //    }
 //

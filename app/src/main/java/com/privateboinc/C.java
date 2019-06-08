@@ -9,7 +9,7 @@ class C {
     static final String android = "android";
     static final String europeLondon = "Europe/London";
     static final String marketDetails = "market://details?id=";
-    static final int defaultIntervalRead = 1000;
+    static final int defaultIntervalRead = 500;
     static final int defaultIntervalUpdate = 1000;
     static final int defaultIntervalWidth = 1;
 
@@ -75,23 +75,4 @@ class C {
 
     static final String graphicMode = "graphicMode";
     static final int graphicModeShowMemory = 0;
-    static final int graphicModeHideMemory = 1;
-
-    // ActivityPreferences
-    static final String currentItem = "ci";
-
-    static final String mSRead = "mSRead";
-    static final String mSUpdate = "mSUpdate";
-    static final String mSWidth = "mSWidth";
-
-    static final String mCBMemFreeD = "memFreeD";
-    static final String mCBBuffersD = "buffersD";
-    static final String mCBCachedD = "cachedD";
-    static final String mCBActiveD = "activeD";
-    static final String mCBInactiveD = "inactiveD";
-    static final String mCBSwapTotalD = "swapTotalD";
-    static final String mCBDirtyD = "dirtyD";
-    static final String mCBCpuTotalD = "cpuTotalD";
-    static final String mCBCpuAMD = "cpuAMD";
-    //	static final String mCBCpuRestD = "cpuRestD";
 }

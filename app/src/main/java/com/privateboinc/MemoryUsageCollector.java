@@ -26,16 +26,16 @@ import java.util.concurrent.TimeUnit;
 public class MemoryUsageCollector {
     private static final int INITIAL_DELAY = 0;
     private static final int SAMPLES_BUFFER_SIZE_DEFAULT = 1000;
-    private final int periodInMs;
-    private final int samplesBufferSize;
-    private final Debug.MemoryInfo[] amMI;
+    private final int mPeriodInMs;
+    private final int mSamplesBufferSize;
+    private final Debug.MemoryInfo[] mActivityManagerMemoryInfo;
 
-    private boolean firstRead = true;
-    private int memTotal;
-    private Buffer memUsed;
-    private Buffer memAvailable;
-    private Buffer memFree;
-    private Buffer cached;
+    private boolean mFirstRead = true;
+    private int mMemTotal;
+    private Buffer mMemUsed;
+    private Buffer mMemAvailable;
+    private Buffer mMemFree;
+    private Buffer mCached;
     private Buffer threshold;
     private ActivityManager activityManager;
     private ActivityManager.MemoryInfo activityMemoryInfo;
@@ -51,23 +51,23 @@ public class MemoryUsageCollector {
     }
 
     public MemoryUsageCollector(Context context, int periodInMs, int samplesBufferSize) {
-        this.periodInMs = periodInMs;
-        this.samplesBufferSize = samplesBufferSize;
+        this.mPeriodInMs = periodInMs;
+        this.mSamplesBufferSize = samplesBufferSize;
         this.activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         this.activityMemoryInfo = new ActivityManager.MemoryInfo();
-        this.amMI = activityManager.getProcessMemoryInfo(new int[]{Process.myPid()});
+        this.mActivityManagerMemoryInfo = activityManager.getProcessMemoryInfo(new int[]{Process.myPid()});
     }
 
     /**
      * Start collecting samples. Previously collected samples will be discarded.
      */
     public void start() {
-        memoryAM = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
-        memUsed = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
-        memAvailable = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
-        memFree = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
-        cached = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
-        threshold = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(samplesBufferSize));
+        memoryAM = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(mSamplesBufferSize));
+        mMemUsed = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(mSamplesBufferSize));
+        mMemAvailable = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(mSamplesBufferSize));
+        mMemFree = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(mSamplesBufferSize));
+        mCached = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(mSamplesBufferSize));
+        threshold = BufferUtils.synchronizedBuffer(new CircularFifoBuffer(mSamplesBufferSize));
         final Runnable collector = new Runnable() {
             public void run() {
                 Log.i("sample", "sample collection");
@@ -78,7 +78,7 @@ public class MemoryUsageCollector {
                 }
             }
         };
-        collectorHandle = scheduler.scheduleAtFixedRate(collector, INITIAL_DELAY, periodInMs,
+        collectorHandle = scheduler.scheduleAtFixedRate(collector, INITIAL_DELAY, mPeriodInMs,
                 TimeUnit.MILLISECONDS);
     }
 
@@ -98,26 +98,26 @@ public class MemoryUsageCollector {
                     "[\\n]");
             for (String s : memInfoContent) {
                 // Memory values. Percentages are calculated in the ActivityMain class.
-                if (firstRead && s.startsWith("MemTotal:")) {
-                    memTotal = Integer.parseInt(s.split("[ ]+", 3)[1]);
-                    firstRead = false;
+                if (mFirstRead && s.startsWith("MemTotal:")) {
+                    mMemTotal = Integer.parseInt(s.split("[ ]+", 3)[1]);
+                    mFirstRead = false;
                 } else if (s.startsWith("MemFree:"))
-                    memFree.add(s.split("[ ]+", 3)[1]);
+                    mMemFree.add(s.split("[ ]+", 3)[1]);
                 else if (s.startsWith("Cached:"))
-                    cached.add(s.split("[ ]+", 3)[1]);
+                    mCached.add(s.split("[ ]+", 3)[1]);
             }
             // http://stackoverflow.com/questions/3170691/how-to-get-current-memory-usage-in-android
             activityManager.getMemoryInfo(activityMemoryInfo);
             if (activityMemoryInfo == null) {
-                memUsed.add(String.valueOf(0));
-                memAvailable.add(String.valueOf(0));
+                mMemUsed.add(String.valueOf(0));
+                mMemAvailable.add(String.valueOf(0));
                 threshold.add(String.valueOf(0));
             } else {
-                memUsed.add(String.valueOf(memTotal - activityMemoryInfo.availMem / 1024));
-                memAvailable.add(String.valueOf(activityMemoryInfo.availMem / 1024));
+                mMemUsed.add(String.valueOf(mMemTotal - activityMemoryInfo.availMem / 1024));
+                mMemAvailable.add(String.valueOf(activityMemoryInfo.availMem / 1024));
                 threshold.add(String.valueOf(activityMemoryInfo.threshold / 1024));
             }
-            memoryAM.add(amMI[0].getTotalPrivateDirty());
+            memoryAM.add(mActivityManagerMemoryInfo[0].getTotalPrivateDirty());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -152,24 +152,24 @@ public class MemoryUsageCollector {
         return memoryAM;
     }
 
-    int getMemTotal() {
-        return memTotal;
+    int getmMemTotal() {
+        return mMemTotal;
     }
 
-    Collection<String> getMemUsed() {
-        return memUsed;
+    Collection<String> getmMemUsed() {
+        return mMemUsed;
     }
 
-    Collection<String> getMemAvailable() {
-        return memAvailable;
+    Collection<String> getmMemAvailable() {
+        return mMemAvailable;
     }
 
-    Collection<String> getMemFree() {
-        return memFree;
+    Collection<String> getmMemFree() {
+        return mMemFree;
     }
 
-    Collection<String> getCached() {
-        return cached;
+    Collection<String> getmCached() {
+        return mCached;
     }
 
     Collection<String> getThreshold() {
@@ -177,14 +177,14 @@ public class MemoryUsageCollector {
     }
 
     int getIntervalRead() {
-        return periodInMs;
+        return mPeriodInMs;
     }
 
     int getIntervalUpdate() {
-        return periodInMs;
+        return mPeriodInMs;
     }
 
-    int getIntervalWidth() {
-        return periodInMs/1000;
+    double getIntervalWidthInSeconds() {
+        return mPeriodInMs /1000.0;
     }
 }

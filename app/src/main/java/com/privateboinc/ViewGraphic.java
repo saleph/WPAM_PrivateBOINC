@@ -19,15 +19,13 @@ import android.graphics.Paint.Style;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.TextureView;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import static java.lang.Math.floor;
 
 public class ViewGraphic extends TextureView {
 
@@ -45,7 +43,6 @@ public class ViewGraphic extends TextureView {
     private int thickParam;
     private int thickGrid;
     private int thickEdges;
-    private int textSize;
     private int textSizeLegend;
     private Rect bgRect;
     private Paint bgPaint;
@@ -73,8 +70,6 @@ public class ViewGraphic extends TextureView {
         thickGrid = (int) Math.ceil(1 * sD);
         thickParam = (int) Math.ceil(1 * sD);
         thickEdges = (int) Math.ceil(2 * sD);
-
-        textSize = (int) Math.ceil(10 * sD);
         textSizeLegend = (int) Math.ceil(10 * sD);
     }
 
@@ -110,7 +105,7 @@ public class ViewGraphic extends TextureView {
         int tempVar;
         for (int n = 1; n <= minutes; ++n) {
             tempVar =
-					xRight - n * mSR.getIntervalWidth() * (int) (60 / ((float) mSR.getIntervalRead() / 1000));
+                    (int)floor(xRight - n * mSR.getIntervalWidthInSeconds() * floor(60.0 / (mSR.getIntervalRead() / 1000.0)));
             if (mThread.isInterrupted())
                 return;
             canvas.drawLine(tempVar, yTop, tempVar, yBottom, linesGridPaint);
@@ -145,7 +140,7 @@ public class ViewGraphic extends TextureView {
             if (mThread.isInterrupted())
                 return;
             canvas.drawText(n + "'",
-					xRight - n * mSR.getIntervalWidth() * (int) (60 / ((float) mSR.getIntervalRead() / 1000)), yBottom + yBottomTextSpace, textPaintLegend);
+                    (int)floor(xLeft + n * mSR.getIntervalWidthInSeconds() * (int) (60 / ((float) mSR.getIntervalRead() / 1000))), yBottom + yBottomTextSpace, textPaintLegend);
         }
         if (minutes == 0) {
             if (mThread.isInterrupted())
@@ -192,9 +187,9 @@ public class ViewGraphic extends TextureView {
             for (int m = 0; m < (y.size() - 1) && m < intervalTotalNumber; ++m) {
                 if (mThread.isInterrupted())
                     return;
-                canvas.drawLine(xLeft + mSR.getIntervalWidth() * m,
+                canvas.drawLine((int)(xLeft + mSR.getIntervalWidthInSeconds() * m),
                         yBottom - y.get(m) * graphicHeight / memTotal,
-                        xLeft + mSR.getIntervalWidth() * m + mSR.getIntervalWidth(),
+                        (int)(xLeft + mSR.getIntervalWidthInSeconds() * m + mSR.getIntervalWidthInSeconds()),
                         yBottom - y.get(m + 1) * graphicHeight / memTotal, paint);
             }
     }
@@ -206,9 +201,9 @@ public class ViewGraphic extends TextureView {
             for (int m = 0; m < (y.size() - 1) && m < intervalTotalNumber; ++m) {
                 if (mThread.isInterrupted())
                     return;
-                canvas.drawLine(xLeft + mSR.getIntervalWidth() * m,
+                canvas.drawLine((int)(xLeft + mSR.getIntervalWidthInSeconds() * m),
                         yBottom - Integer.parseInt(y.get(m)) * graphicHeight / memTotal,
-                        xLeft + mSR.getIntervalWidth() * m + mSR.getIntervalWidth(),
+                        (int)(xLeft + mSR.getIntervalWidthInSeconds() * m + mSR.getIntervalWidthInSeconds()),
                         yBottom - Integer.parseInt(y.get(m + 1)) * graphicHeight / memTotal,
                         paint);
             }
@@ -221,9 +216,9 @@ public class ViewGraphic extends TextureView {
             for (int m = 0; m < (y.size() - 1) && m < intervalTotalNumber; ++m) {
                 if (mThread.isInterrupted())
                     return;
-                canvas.drawLine(xRight - mSR.getIntervalWidth() * m,
+                canvas.drawLine((int)(xRight - mSR.getIntervalWidthInSeconds() * m),
 						yBottom - y.get(m) * graphicHeight / 100,
-						xRight - mSR.getIntervalWidth() * m - mSR.getIntervalWidth(),
+                        (int)(xRight - mSR.getIntervalWidthInSeconds() * m - mSR.getIntervalWidthInSeconds()),
 						yBottom - y.get(m + 1) * graphicHeight / 100, paint);
             }
     }
@@ -292,8 +287,8 @@ public class ViewGraphic extends TextureView {
     }
 
     void calculateInnerVariables() {
-        intervalTotalNumber = (int) Math.ceil(graphicWidth / mSR.getIntervalWidth());
-        minutes = (int) Math.floor(intervalTotalNumber * mSR.getIntervalRead() / 1000 / 60);
-        seconds = (int) Math.floor(intervalTotalNumber * mSR.getIntervalRead() / 1000);
+        intervalTotalNumber = (int) Math.ceil(graphicWidth / mSR.getIntervalWidthInSeconds());
+        minutes = (int) floor(intervalTotalNumber * mSR.getIntervalRead() / 1000.0 / 60.0);
+        seconds = (int) floor(intervalTotalNumber * mSR.getIntervalRead() / 1000.0);
     }
 }
