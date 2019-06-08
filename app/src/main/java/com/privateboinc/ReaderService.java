@@ -37,7 +37,7 @@ public class ReaderService extends Service {
     @Override
     public void onCreate() {
         log("created:");
-        this.memoryUsageCollector = new MemoryUsageCollector(this, 1000, 10);
+        this.memoryUsageCollector = new MemoryUsageCollector(this, 1000, 1000);
         memoryUsageCollector.registerMemoryUsageSampleAddedListener(new MemoryUsageSampleAddedListener() {
             @Override
             public void onMemoryUsageSampleAdded() {

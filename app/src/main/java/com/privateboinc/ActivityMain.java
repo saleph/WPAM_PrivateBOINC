@@ -3,8 +3,6 @@ package com.privateboinc;
 import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.LayoutTransition;
-import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -23,37 +21,26 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Process;
-
-import androidx.core.app.ActivityCompat;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-
 import android.util.Log;
-import android.view.Gravity;
-import android.view.HapticFeedbackConstants;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
-import android.view.TextureView;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.TextureView;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewManager;
 import android.view.ViewStub;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
-import java.io.Serializable;
+import androidx.core.app.ActivityCompat;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -104,7 +91,6 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
             mFormatTime = new DecimalFormat("0.#");
     private Resources res;
 
-    private ToggleButton mBHide;
     private ViewGraphic mVG;
 
     private PopupWindow mPWMenu;
@@ -115,6 +101,33 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
     private Intent tempIntent;
     private Handler mHandler = new Handler(), mHandlerVG = new Handler();
     private Thread mThread;
+    private Runnable drawRunnableGraphic = new Runnable() {
+        @Override
+        public void run() {
+            mThread = new Thread() {
+                @Override
+                public void run() {
+                    Canvas canvas;
+                    if (!canvasLocked) {
+                        canvas = mVG.lockCanvas();
+                        if (canvas != null) {
+                            canvasLocked = true;
+                            mVG.onDrawCustomised(canvas, mThread);
+
+                            try {
+                                mVG.unlockCanvasAndPost(canvas);
+                            } catch (IllegalStateException e) {
+                                Log.w("Activity main: ", e.getMessage());
+                            }
+
+                            canvasLocked = false;
+                        }
+                    }
+                }
+            };
+            mThread.start();
+        }
+    };
     private Runnable drawRunnable = new Runnable() {
         @SuppressLint("NewApi")
         @Override
@@ -133,42 +146,12 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
             }
         }
     };
-    private Runnable drawRunnableGraphic = new Runnable() {
-        @Override
-        public void run() {
-            mThread = new Thread() {
-                @Override
-                public void run() {
-                    Canvas canvas;
-                    if (!canvasLocked) {
-                        canvas = mVG.lockCanvas();
-                        if (canvas != null) {
-                            canvasLocked = true;
-                            mVG.onDrawCustomised(canvas, mThread);
-
-
-                            try {
-                                mVG.unlockCanvasAndPost(canvas);
-                            } catch (IllegalStateException e) {
-                                Log.w("Activity main: ", e.getMessage());
-                            }
-
-                            canvasLocked = false;
-                        }
-                    }
-                }
-            };
-            mThread.start();
-        }
-    };
-
     private ServiceConnection mServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             mSR = ((ReaderService.ReaderServiceBinder) service).getService();
 
             mVG.setService(mSR);
-            mVG.setParameters(cpuTotal, cpuAM, memUsed, memAvailable, memFree, cached, threshold);
 
 
             mTVMemTotal.setText(mFormat.format(mSR.getMemTotal()) + C.kB);
@@ -197,7 +180,7 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
         super.onCreate(savedInstanceState);
         Intent serviceIntent = new Intent(getApplicationContext(), ReaderService.class);
         startService(serviceIntent);
-        mVG = (ViewGraphic) findViewById(R.id.ANGraphic);
+        mVG = findViewById(R.id.ANGraphic);
         setContentView(R.layout.activity_main);
         {
             super.onCreate(savedInstanceState);
@@ -205,18 +188,18 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
             setContentView(R.layout.activity_main);
 
             mPrefs = getSharedPreferences(getString(R.string.app_name) + C.prefs, MODE_PRIVATE);
-            int intervalRead = mPrefs.getInt(C.intervalRead, C.defaultIntervalUpdate);
-            intervalUpdate = mPrefs.getInt(C.intervalUpdate, C.defaultIntervalUpdate);
-            int intervalWidth = mPrefs.getInt(C.intervalWidth, C.defaultIntervalWidth);
+            int intervalRead = C.defaultIntervalUpdate;
+            intervalUpdate = C.defaultIntervalUpdate;
+            int intervalWidth = C.defaultIntervalWidth;
 
-            cpuTotal = mPrefs.getBoolean(C.cpuTotal, true);
-            cpuAM = mPrefs.getBoolean(C.cpuAM, true);
+            cpuTotal = true;
+            cpuAM = true;
 
-            memUsed = mPrefs.getBoolean(C.memUsed, true);
-            memAvailable = mPrefs.getBoolean(C.memAvailable, true);
-            memFree = mPrefs.getBoolean(C.memFree, false);
-            cached = mPrefs.getBoolean(C.cached, false);
-            threshold = mPrefs.getBoolean(C.threshold, true);
+            memUsed = true;
+            memAvailable = true;
+            memFree = true;
+            cached = true;
+            threshold = true;
 
             res = getResources();
             sD = res.getDisplayMetrics().density;
@@ -231,28 +214,14 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
                 orientationChanged = true;
 
 
-            mVG = (ViewGraphic) findViewById(R.id.ANGraphic);
+            mVG = findViewById(R.id.ANGraphic);
 
             graphicMode = mPrefs.getInt(C.graphicMode, C.graphicModeShowMemory);
-            mVG.setGraphicMode(graphicMode);
-            mBHide = (ToggleButton) findViewById(R.id.BHideMemory);
-            mBHide.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    graphicMode = graphicMode == C.graphicModeShowMemory ? C.graphicModeHideMemory : C.graphicModeShowMemory;
-                    mPrefs.edit().putInt(C.graphicMode, graphicMode).apply();
-                    mVG.setGraphicMode(graphicMode);
-                    mBHide.setChecked(graphicMode == C.graphicModeShowMemory ? false : true);
-                    mHandlerVG.post(drawRunnableGraphic);
-                }
-            });
-            mBHide.setChecked(graphicMode == C.graphicModeShowMemory ? false : true);
 
             processesMode = mPrefs.getInt(C.processesMode, C.processesModeShowCPU);
-            mVG.setProcessesMode(processesMode);
 
 
-            mLGraphicSurface = (FrameLayout) findViewById(R.id.LGraphicButton);
+            mLGraphicSurface = findViewById(R.id.LGraphicButton);
 
             if (Build.VERSION.SDK_INT >= 19) {
                 getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
@@ -266,7 +235,7 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
                     if (navigationBarHeight == 0)
                         navigationBarHeight = (int) (48 * sD);
 
-                    FrameLayout nb = (FrameLayout) findViewById(R.id.LNavigationBar);
+                    FrameLayout nb = findViewById(R.id.LNavigationBar);
                     nb.setVisibility(View.VISIBLE);
                     ((FrameLayout.LayoutParams) nb.getLayoutParams()).height = navigationBarHeight;
                     ((FrameLayout.LayoutParams) mVG.getLayoutParams()).setMargins(0, 0, 0, navigationBarHeight);
@@ -278,7 +247,7 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
 
             }
 
-            LinearLayout mLParent = (LinearLayout) findViewById(R.id.LParent);
+            LinearLayout mLParent = findViewById(R.id.LParent);
 
 
             LinearLayout mLMenu = (LinearLayout) getLayoutInflater().inflate(R.layout.layer_menu, null);
@@ -323,37 +292,37 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
             });
 
 
-            LinearLayout mLMemUsed = (LinearLayout) findViewById(R.id.LMemUsed);
+            LinearLayout mLMemUsed = findViewById(R.id.LMemUsed);
             mLMemUsed.setTag(C.memUsed);
 
 
-            LinearLayout mLMemAvailable = (LinearLayout) findViewById(R.id.LMemAvailable);
+            LinearLayout mLMemAvailable = findViewById(R.id.LMemAvailable);
             mLMemAvailable.setTag(C.memAvailable);
 
 
-            LinearLayout mLMemFree = (LinearLayout) findViewById(R.id.LMemFree);
+            LinearLayout mLMemFree = findViewById(R.id.LMemFree);
             mLMemFree.setTag(C.memFree);
 
 
-            LinearLayout mLCached = (LinearLayout) findViewById(R.id.LCached);
+            LinearLayout mLCached = findViewById(R.id.LCached);
             mLCached.setTag(C.cached);
 
 
-            LinearLayout mLThreshold = (LinearLayout) findViewById(R.id.LThreshold);
+            LinearLayout mLThreshold = findViewById(R.id.LThreshold);
             mLThreshold.setTag(C.threshold);
 
 
-            mTVMemTotal = (TextView) findViewById(R.id.TVMemTotal);
-            mTVMemUsed = (TextView) findViewById(R.id.TVMemUsed);
-            mTVMemUsedP = (TextView) findViewById(R.id.TVMemUsedP);
-            mTVMemAvailable = (TextView) findViewById(R.id.TVMemAvailable);
-            mTVMemAvailableP = (TextView) findViewById(R.id.TVMemAvailableP);
-            mTVMemFree = (TextView) findViewById(R.id.TVMemFree);
-            mTVMemFreeP = (TextView) findViewById(R.id.TVMemFreeP);
-            mTVCached = (TextView) findViewById(R.id.TVCached);
-            mTVCachedP = (TextView) findViewById(R.id.TVCachedP);
-            mTVThreshold = (TextView) findViewById(R.id.TVThreshold);
-            mTVThresholdP = (TextView) findViewById(R.id.TVThresholdP);
+            mTVMemTotal = findViewById(R.id.TVMemTotal);
+            mTVMemUsed = findViewById(R.id.TVMemUsed);
+            mTVMemUsedP = findViewById(R.id.TVMemUsedP);
+            mTVMemAvailable = findViewById(R.id.TVMemAvailable);
+            mTVMemAvailableP = findViewById(R.id.TVMemAvailableP);
+            mTVMemFree = findViewById(R.id.TVMemFree);
+            mTVMemFreeP = findViewById(R.id.TVMemFreeP);
+            mTVCached = findViewById(R.id.TVCached);
+            mTVCachedP = findViewById(R.id.TVCachedP);
+            mTVThreshold = findViewById(R.id.TVThreshold);
+            mTVThresholdP = findViewById(R.id.TVThresholdP);
 
             mLGraphicSurface.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
@@ -470,17 +439,13 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
             if (savedInstanceState != null && !savedInstanceState.isEmpty()) {
                 processesMode = savedInstanceState.getInt(C.processesMode);
 
-                mVG.setProcessesMode(processesMode);
-
                 canvasLocked = savedInstanceState.getBoolean(C.canvasLocked);
-
-
             }
 
 
             if (mPrefs.getBoolean(C.welcome, true)) {
                 mPrefs.edit().putLong(C.welcomeDate, Calendar.getInstance(TimeZone.getTimeZone(C.europeLondon)).getTimeInMillis()).apply();
-                ViewStub v = (ViewStub) findViewById(R.id.VSWelcome);
+                ViewStub v = findViewById(R.id.VSWelcome);
                 if (v != null) {
                     mLWelcome = (LinearLayout) v.inflate();
 
@@ -521,7 +486,7 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
                     || ((float) (time - mPrefs.getLong(C.welcomeDate, 1)) / (24 * 60 * 60 * 1000) > 90)
                     && !mPrefs.getBoolean(C.feedbackDone, false)) {
                 mPrefs.edit().putBoolean(C.feedbackFirstTime, false).apply();
-                ViewStub v = (ViewStub) findViewById(R.id.VSFeedback);
+                ViewStub v = findViewById(R.id.VSFeedback);
                 if (v != null) {
                     mLFeedback = (LinearLayout) v.inflate();
 
@@ -644,7 +609,7 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
 
     @SuppressWarnings("unchecked")
     private void setTextLabelMemoryProcesses(LinearLayout l) {
-        TextView tv = (TextView) l.findViewById(R.id.TVpAbsolute);
+        TextView tv = l.findViewById(R.id.TVpAbsolute);
         if (processesMode == C.processesModeShowCPU)
             tv.setVisibility(View.INVISIBLE);
         else {

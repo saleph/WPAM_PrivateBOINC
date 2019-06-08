@@ -59,17 +59,6 @@
 		            			android:textColor="@color/shadow"
 		            			android:textSize="22sp"
 			                	android:textStyle="bold" />
-	
-				            <ToggleButton
-				                android:id="@+id/BHideMemory"
-				                android:layout_width="55dp"
-				                android:layout_height="34dp"
-				                android:layout_marginLeft="5dp"
-				                android:textOn="@string/w_main_hide"
-				                android:textOff="@string/w_main_hide"
-				                android:textSize="12sp"
-				                android:includeFontPadding="false"
-				                android:textAllCaps="false" />
 			            </LinearLayout>
 			
 			            <LinearLayout
