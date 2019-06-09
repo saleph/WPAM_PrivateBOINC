@@ -9,7 +9,7 @@ class C {
     static final String android = "android";
     static final String europeLondon = "Europe/London";
     static final String marketDetails = "market://details?id=";
-    static final int defaultIntervalRead = 500;
+    static final int defaultIntervalRead = 50;
     static final int defaultIntervalUpdate = 1000;
     static final int defaultIntervalWidth = 1;
 

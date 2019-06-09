@@ -76,8 +76,6 @@ public class ViewGraphic extends TextureView {
 
     // https://groups.google.com/a/chromium.org/forum/#!topic/graphics-dev/Z0yE-PWQXc4
     // http://www.edu4java.com/en/androidgame/androidgame2.html
-    //	@Override
-    @SuppressWarnings("unchecked")
     protected void onDrawCustomised(Canvas canvas, Thread thread) {
         if (mSR == null || canvas == null)
             return;

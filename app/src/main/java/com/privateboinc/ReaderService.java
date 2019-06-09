@@ -82,6 +82,7 @@ public class ReaderService extends Service {
         log("on destroy");
         memoryUsageCollector.stop();
         stopForeground(true);
+        unregisterReceiver(receiverClose);
     }
 
     private void log(String msg) {
