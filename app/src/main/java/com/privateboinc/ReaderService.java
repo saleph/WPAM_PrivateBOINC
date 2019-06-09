@@ -37,8 +37,7 @@ public class ReaderService extends Service {
 
     @Override
     public void onCreate() {
-        log("created:");
-        this.memoryUsageCollector = new MemoryUsageCollector(this, C.defaultIntervalRead, 1000);
+        this.memoryUsageCollector = new MemoryUsageCollector(this, C.defaultIntervalRead, C.sampleBufferSize);
         memoryUsageCollector.registerMemoryUsageSampleAddedListener(new MemoryUsageSampleAddedListener() {
             @Override
             public void onMemoryUsageSampleAdded() {
@@ -73,7 +72,7 @@ public class ReaderService extends Service {
     }
 
     private void handleMemorySample() {
-        log("memory sample collected");
+        //log(memoryUsageCollector.getMemFree().toString());
     }
 
     @Override
@@ -99,23 +98,23 @@ public class ReaderService extends Service {
     }
 
     Long getMemTotal() {
-        return memoryUsageCollector.getmMemTotal() ;
+        return memoryUsageCollector.getMemTotal() ;
     }
 
     Collection<Long> getMemUsed() {
-        return memoryUsageCollector.getmMemUsed();
+        return memoryUsageCollector.getMemUsed();
     }
 
     Collection<Long> getMemAvailable() {
-        return memoryUsageCollector.getmMemAvailable();
+        return memoryUsageCollector.getMemAvailable();
     }
 
     Collection<Long> getMemFree() {
-        return memoryUsageCollector.getmMemFree();
+        return memoryUsageCollector.getMemFree();
     }
 
     Collection<Long> getCached() {
-        return memoryUsageCollector.getmCached();
+        return memoryUsageCollector.getCached();
     }
 
     Collection<Long> getThreshold() {
