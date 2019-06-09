@@ -31,7 +31,7 @@ public class MemoryUsageCollector {
     private final Debug.MemoryInfo[] mActivityManagerMemoryInfo;
 
     private boolean mFirstRead = true;
-    private int mMemTotal;
+    private Long mMemTotal;
     private Buffer mMemUsed;
     private Buffer mMemAvailable;
     private Buffer mMemFree;
@@ -99,25 +99,25 @@ public class MemoryUsageCollector {
             for (String s : memInfoContent) {
                 // Memory values. Percentages are calculated in the ActivityMain class.
                 if (mFirstRead && s.startsWith("MemTotal:")) {
-                    mMemTotal = Integer.parseInt(s.split("[ ]+", 3)[1]);
+                    mMemTotal = Long.parseLong(s.split("[ ]+", 3)[1]);
                     mFirstRead = false;
                 } else if (s.startsWith("MemFree:"))
-                    mMemFree.add(s.split("[ ]+", 3)[1]);
+                    mMemFree.add(Long.valueOf(s.split("[ ]+", 3)[1]));
                 else if (s.startsWith("Cached:"))
-                    mCached.add(s.split("[ ]+", 3)[1]);
+                    mCached.add(Long.valueOf(s.split("[ ]+", 3)[1]));
             }
             // http://stackoverflow.com/questions/3170691/how-to-get-current-memory-usage-in-android
             activityManager.getMemoryInfo(activityMemoryInfo);
             if (activityMemoryInfo == null) {
-                mMemUsed.add(String.valueOf(0));
-                mMemAvailable.add(String.valueOf(0));
-                threshold.add(String.valueOf(0));
+                mMemUsed.add(0L);
+                mMemAvailable.add(0L);
+                threshold.add(0L);
             } else {
-                mMemUsed.add(String.valueOf(mMemTotal - activityMemoryInfo.availMem / 1024));
-                mMemAvailable.add(String.valueOf(activityMemoryInfo.availMem / 1024));
-                threshold.add(String.valueOf(activityMemoryInfo.threshold / 1024));
+                mMemUsed.add(mMemTotal - activityMemoryInfo.availMem / 1024);
+                mMemAvailable.add(activityMemoryInfo.availMem / 1024);
+                threshold.add(activityMemoryInfo.threshold / 1024);
             }
-            memoryAM.add(mActivityManagerMemoryInfo[0].getTotalPrivateDirty());
+            memoryAM.add((long) mActivityManagerMemoryInfo[0].getTotalPrivateDirty());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -148,31 +148,31 @@ public class MemoryUsageCollector {
         this.listeners.remove(listener);
     }
 
-    Collection<Integer> getMemoryAM() {
+    Collection<Long> getMemoryAM() {
         return memoryAM;
     }
 
-    int getmMemTotal() {
+    Long getmMemTotal() {
         return mMemTotal;
     }
 
-    Collection<String> getmMemUsed() {
+    Collection<Long> getmMemUsed() {
         return mMemUsed;
     }
 
-    Collection<String> getmMemAvailable() {
+    Collection<Long> getmMemAvailable() {
         return mMemAvailable;
     }
 
-    Collection<String> getmMemFree() {
+    Collection<Long> getmMemFree() {
         return mMemFree;
     }
 
-    Collection<String> getmCached() {
+    Collection<Long> getmCached() {
         return mCached;
     }
 
-    Collection<String> getThreshold() {
+    Collection<Long> getThreshold() {
         return threshold;
     }
 

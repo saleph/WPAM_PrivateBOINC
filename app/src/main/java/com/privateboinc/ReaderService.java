@@ -94,31 +94,31 @@ public class ReaderService extends Service {
         return new ReaderServiceBinder();
     }
 
-    Collection<Integer> getMemoryAM() {
+    Collection<Long> getMemoryAM() {
         return memoryUsageCollector.getMemoryAM();
     }
 
-    int getMemTotal() {
+    Long getMemTotal() {
         return memoryUsageCollector.getmMemTotal() ;
     }
 
-    Collection<String> getMemUsed() {
+    Collection<Long> getMemUsed() {
         return memoryUsageCollector.getmMemUsed();
     }
 
-    Collection<String> getMemAvailable() {
+    Collection<Long> getMemAvailable() {
         return memoryUsageCollector.getmMemAvailable();
     }
 
-    Collection<String> getMemFree() {
+    Collection<Long> getMemFree() {
         return memoryUsageCollector.getmMemFree();
     }
 
-    Collection<String> getCached() {
+    Collection<Long> getCached() {
         return memoryUsageCollector.getmCached();
     }
 
-    Collection<String> getThreshold() {
+    Collection<Long> getThreshold() {
         return memoryUsageCollector.getThreshold();
     }
 

@@ -142,12 +142,12 @@ public class ActivityMain extends Activity implements ActivityCompat.OnRequestPe
         unbindService(mServiceConnection);
     }
 
-    private void setTextLabelMemory(TextView absoluteMemoryValue, TextView percentageMemoryValue, Collection<String> valuesCol) {
-        List<String> values = new ArrayList<>(valuesCol);
+    private void setTextLabelMemory(TextView absoluteMemoryValue, TextView percentageMemoryValue, Collection<Long> valuesCol) {
+        List<Long> values = new ArrayList<>(valuesCol);
         if (values.isEmpty()) {
             return;
         }
-        final int lastReadValue = Integer.parseInt(values.get(values.size() - 1));
+        final long lastReadValue = values.get(values.size() - 1);
         String absoluteMemory = String.format("%s%s", memoryTakenFormat.format(lastReadValue), C.kB);
         absoluteMemoryValue.setText(absoluteMemory);
 

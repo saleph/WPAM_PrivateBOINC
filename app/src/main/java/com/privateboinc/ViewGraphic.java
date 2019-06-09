@@ -39,7 +39,7 @@ public class ViewGraphic extends TextureView {
     private int minutes;
     private int seconds;
     private int intervalTotalNumber;
-    private int memTotal;
+    private Long memTotal;
     private int thickParam;
     private int thickGrid;
     private int thickEdges;
@@ -56,35 +56,39 @@ public class ViewGraphic extends TextureView {
     private Paint memFreePaint;
     private Paint cachedPaint;
     private Paint thresholdPaint;
-    private Collection<Integer> memoryAM;
-    private Collection<String> memUsed, memAvailable, memFree, cached, threshold;
+    private Collection<Long> memoryAM;
+    private Collection<Long> memUsed, memAvailable, memFree, cached, threshold;
     private ReaderService mSR;
     private Resources res;
     private Thread mThread;
+    private Canvas canvas;
 
 
     public ViewGraphic(Context context, AttributeSet attrs) {
         super(context, attrs);
         res = getResources();
-        float sD = res.getDisplayMetrics().density;
-        thickGrid = (int) Math.ceil(1 * sD);
-        thickParam = (int) Math.ceil(1 * sD);
-        thickEdges = (int) Math.ceil(2 * sD);
-        textSizeLegend = (int) Math.ceil(10 * sD);
+        float density = res.getDisplayMetrics().density;
+        thickGrid = (int) Math.ceil(1 * density);
+        thickParam = (int) Math.ceil(1 * density);
+        thickEdges = (int) Math.ceil(2 * density);
+        textSizeLegend = (int) Math.ceil(10 * density);
     }
 
 
     // https://groups.google.com/a/chromium.org/forum/#!topic/graphics-dev/Z0yE-PWQXc4
     // http://www.edu4java.com/en/androidgame/androidgame2.html
-    protected void onDrawCustomised(Canvas canvas, Thread thread) {
-        if (mSR == null || canvas == null)
-            return;
-        else if (!graphicInitialised)
+    protected void onDrawCustomised(Canvas canvasIn, Thread thread) {
+        if (!graphicInitialised) {
             initializeGraphic();
+        }
+        if (mSR == null || canvasIn == null || thread == null) {
+            return;
+        }
         mThread = thread;
+        canvas = canvasIn;
 
         // Graphic background
-        if (mThread == null || mThread.isInterrupted())
+        if (mThread.isInterrupted())
             return;
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         if (mThread.isInterrupted())
@@ -93,9 +97,7 @@ public class ViewGraphic extends TextureView {
 
         // Horizontal graphic grid lines
         for (float n = 0.1f; n < 1.0f; n = n + 0.2f) {
-            if (mThread.isInterrupted())
-                return;
-            canvas.drawLine(xLeft, yTop + graphicHeight * n, xRight, yTop + graphicHeight * n,
+            drawLine(xLeft, yTop + graphicHeight * n, xRight, yTop + graphicHeight * n,
 					linesGridPaint);
         }
 
@@ -104,88 +106,60 @@ public class ViewGraphic extends TextureView {
         for (int n = 1; n <= minutes; ++n) {
             tempVar =
                     (int)floor(xRight - n * mSR.getIntervalWidthInSeconds() * floor(60.0 / (mSR.getIntervalRead() / 1000.0)));
-            if (mThread.isInterrupted())
-                return;
-            canvas.drawLine(tempVar, yTop, tempVar, yBottom, linesGridPaint);
+            drawLine(tempVar, yTop, tempVar, yBottom, linesGridPaint);
         }
-        drawLineInteger(memoryAM, canvas, cpuAMPaint);
-        drawLine(memUsed, canvas, memUsedPaint);
-        drawLine(memAvailable, canvas, memAvailablePaint);
-        drawLine(memFree, canvas, memFreePaint);
-        drawLine(cached, canvas, cachedPaint);
-        drawLine(threshold, canvas, thresholdPaint);
+        drawLineLong(memoryAM, cpuAMPaint);
+        drawLineLong(memUsed, memUsedPaint);
+        drawLineLong(memAvailable, memAvailablePaint);
+        drawLineLong(memFree, memFreePaint);
+        drawLineLong(cached, cachedPaint);
+        drawLineLong(threshold, thresholdPaint);
 
 
         // Horizontal edges
-        if (mThread.isInterrupted())
-            return;
-        canvas.drawLine(xLeft, yTop, xRight, yTop, linesEdgePaint);
-        if (mThread.isInterrupted())
-            return;
-        canvas.drawLine(xLeft, yBottom, xRight, yBottom, linesEdgePaint);
+        drawLine(xLeft, yTop, xRight, yTop, linesEdgePaint);
+        drawLine(xLeft, yBottom, xRight, yBottom, linesEdgePaint);
 
         // Vertical edges
-        if (mThread.isInterrupted())
-            return;
-        canvas.drawLine(xLeft, yTop, xLeft, yBottom, linesEdgePaint);
-        if (mThread.isInterrupted())
-            return;
-        canvas.drawLine(xRight, yBottom, xRight, yTop, linesEdgePaint);
+        drawLine(xLeft, yTop, xLeft, yBottom, linesEdgePaint);
+        drawLine(xRight, yBottom, xRight, yTop, linesEdgePaint);
 
         // Horizontal legend
         int yBottomTextSpace = 25;
         for (int n = 0; n <= minutes; ++n) {
-            if (mThread.isInterrupted())
-                return;
-            canvas.drawText(n + "'",
+            drawText(n + "'",
                     (int)floor(xLeft + n * mSR.getIntervalWidthInSeconds() * (int) (60 / ((float) mSR.getIntervalRead() / 1000))), yBottom + yBottomTextSpace, textPaintLegend);
         }
         if (minutes == 0) {
-            if (mThread.isInterrupted())
-                return;
-            canvas.drawText(seconds + "\"", xLeft, yBottom + yBottomTextSpace, textPaintLegend);
+            drawText(seconds + "\"", xLeft, yBottom + yBottomTextSpace, textPaintLegend);
         }
 
         // Vertical legend
         int xLeftTextSpace = 10;
         tempVar = xLeft - xLeftTextSpace;
-        if (mThread.isInterrupted())
-            return;
-        canvas.drawText("100%", tempVar, yTop + 5, textPaintLegendV);
+        drawText("100%", tempVar, yTop + 5, textPaintLegendV);
         if (mThread.isInterrupted())
             return;
         int yLegendSpace = 8;
-        canvas.drawText("90%", tempVar, yTop + graphicHeight * 0.1f + yLegendSpace,
+        drawText("90%", tempVar, yTop + graphicHeight * 0.1f + yLegendSpace,
 				textPaintLegendV);
-        if (mThread.isInterrupted())
-            return;
-        canvas.drawText("70%", tempVar, yTop + graphicHeight * 0.3f + yLegendSpace,
+        drawText("70%", tempVar, yTop + graphicHeight * 0.3f + yLegendSpace,
 				textPaintLegendV);
-        if (mThread.isInterrupted())
-            return;
-        canvas.drawText("50%", tempVar, yTop + graphicHeight * 0.5f + yLegendSpace,
+        drawText("50%", tempVar, yTop + graphicHeight * 0.5f + yLegendSpace,
 				textPaintLegendV);
-        if (mThread.isInterrupted())
-            return;
-        canvas.drawText("30%", tempVar, yTop + graphicHeight * 0.7f + yLegendSpace,
+        drawText("30%", tempVar, yTop + graphicHeight * 0.7f + yLegendSpace,
 				textPaintLegendV);
-        if (mThread.isInterrupted())
-            return;
-        canvas.drawText("10%", tempVar, yTop + graphicHeight * 0.9f + yLegendSpace,
+        drawText("10%", tempVar, yTop + graphicHeight * 0.9f + yLegendSpace,
 				textPaintLegendV);
-        if (mThread.isInterrupted())
-            return;
-        canvas.drawText("0%", tempVar, yBottom + yLegendSpace, textPaintLegendV);
+        drawText("0%", tempVar, yBottom + yLegendSpace, textPaintLegendV);
     }
 
 
-    private void drawLineInteger(Collection<Integer> yColl, Canvas canvas, Paint paint) {
-        List<Integer> y = new ArrayList<>(yColl);
+    private void drawLineLong(Collection<Long> yColl, Paint paint) {
+        List<Long> y = new ArrayList<>(yColl);
         if (y.size() > 1)
             for (int m = 0; m < (y.size() - 1) && m < intervalTotalNumber; ++m) {
-                if (mThread.isInterrupted())
-                    return;
-                canvas.drawLine((int)(xLeft + mSR.getIntervalWidthInSeconds() * m),
+                drawLine((int)(xLeft + mSR.getIntervalWidthInSeconds() * m),
                         yBottom - y.get(m) * graphicHeight / memTotal,
                         (int)(xLeft + mSR.getIntervalWidthInSeconds() * m + mSR.getIntervalWidthInSeconds()),
                         yBottom - y.get(m + 1) * graphicHeight / memTotal, paint);
@@ -193,31 +167,15 @@ public class ViewGraphic extends TextureView {
     }
 
 
-    private void drawLine(Collection<String> yColl, Canvas canvas, Paint paint) {
-        List<String> y = new ArrayList<>(yColl);
+    private void drawLine(Collection<Long> yColl, Paint paint) {
+        List<Long> y = new ArrayList<>(yColl);
         if (y.size() > 1)
             for (int m = 0; m < (y.size() - 1) && m < intervalTotalNumber; ++m) {
-                if (mThread.isInterrupted())
-                    return;
-                canvas.drawLine((int)(xLeft + mSR.getIntervalWidthInSeconds() * m),
-                        yBottom - Integer.parseInt(y.get(m)) * graphicHeight / memTotal,
+                drawLine((int)(xLeft + mSR.getIntervalWidthInSeconds() * m),
+                        yBottom - y.get(m) * graphicHeight / memTotal,
                         (int)(xLeft + mSR.getIntervalWidthInSeconds() * m + mSR.getIntervalWidthInSeconds()),
-                        yBottom - Integer.parseInt(y.get(m + 1)) * graphicHeight / memTotal,
+                        yBottom - y.get(m + 1) * graphicHeight / memTotal,
                         paint);
-            }
-    }
-
-
-    private void drawLineFloat(Collection<Float> yColl, Canvas canvas, Paint paint) {
-        List<Float> y = new ArrayList<>(yColl);
-        if (y.size() > 1)
-            for (int m = 0; m < (y.size() - 1) && m < intervalTotalNumber; ++m) {
-                if (mThread.isInterrupted())
-                    return;
-                canvas.drawLine((int)(xRight - mSR.getIntervalWidthInSeconds() * m),
-						yBottom - y.get(m) * graphicHeight / 100,
-                        (int)(xRight - mSR.getIntervalWidthInSeconds() * m - mSR.getIntervalWidthInSeconds()),
-						yBottom - y.get(m + 1) * graphicHeight / 100, paint);
             }
     }
 
@@ -288,5 +246,18 @@ public class ViewGraphic extends TextureView {
         intervalTotalNumber = (int) Math.ceil(graphicWidth / mSR.getIntervalWidthInSeconds());
         minutes = (int) floor(intervalTotalNumber * mSR.getIntervalRead() / 1000.0 / 60.0);
         seconds = (int) floor(intervalTotalNumber * mSR.getIntervalRead() / 1000.0);
+    }
+
+    void drawLine(float startX, float startY, float stopX, float stopY, Paint paint) {
+        if (mThread.isInterrupted()) {
+            return;
+        }
+        canvas.drawLine(startX, startY, stopX, stopY, paint);
+    }
+    
+    void drawText(String text, float x, float y, Paint paint) {
+        if (mThread.isInterrupted())
+            return;
+        canvas.drawText(text, x, y, paint);
     }
 }
